@@ -110,9 +110,9 @@ namespace VSIX
                             {
                                 #region Class
                                 //!< クラス列挙
-                                for (var j = 1; j <= classes.Count; ++j)
+                                foreach(var j in classes)
                                 {
-                                    var codeClass = (VCCodeClass)classes.Item(j);
+                                    var codeClass = (VCCodeClass)j;
                                     if (null != codeClass)
                                     {
                                         Debug.WriteLine("\t" + codeClass.Name);
@@ -122,12 +122,21 @@ namespace VSIX
                                         {
                                             #region Function
                                             //!< クラス関数列挙
-                                            for (var k = 1; k <= functions.Count; ++k)
+                                            foreach(var k in functions)
                                             {
-                                                var codeFunction = (VCCodeFunction)functions.Item(k);
+                                                var codeFunction = (VCCodeFunction)k;
                                                 if (null != codeFunction)
                                                 {
                                                     Debug.WriteLine("\t" + "\t" + codeFunction.Name);
+                                                    //!< 引数列挙
+                                                    foreach(var l in codeFunction.Parameters)
+                                                    {
+                                                        var codeParameter = (VCCodeParameter)l;
+                                                        if(null != codeParameter)
+                                                        {
+                                                            Debug.WriteLine("\t" + "\t" + "\t" + codeParameter.TypeString + " " + codeParameter.Name);
+                                                        }
+                                                    }
                                                 }
                                             }
                                             #endregion
@@ -141,10 +150,10 @@ namespace VSIX
                             if (null != globalFunctions)
                             {
                                 #region GlobalFunction
-                                //!< グローバル関数を列挙
-                                for (var j = 1; j <= globalFunctions.Count; ++j)
+                                //!< グローバル関数列挙
+                                foreach(var j in globalFunctions)
                                 {
-                                    var codeFunction = (VCCodeFunction)globalFunctions.Item(j);
+                                    var codeFunction = (VCCodeFunction)j;
                                     if (null != codeFunction)
                                     {
                                         Debug.WriteLine("\t" + codeFunction.Name);
@@ -156,7 +165,9 @@ namespace VSIX
                                             var textPoint = codeFunction.GetStartPoint(EnvDTE.vsCMPart.vsCMPartBody);
                                             if (null != textPoint)
                                             {
-                                                textPoint.CreateEditPoint().Insert("YYY");
+                                                var editPoint = textPoint.CreateEditPoint();
+                                                editPoint.WordRight();
+                                                editPoint.Insert("YYY");
                                             }
                                         }
 #endif
