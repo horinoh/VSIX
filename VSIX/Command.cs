@@ -4,8 +4,9 @@ using System.Globalization;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-using System.Diagnostics;
 using Microsoft.VisualStudio.VCCodeModel;
+using System.Text;
+using System.Diagnostics;
 
 namespace VSIX
 {
@@ -81,6 +82,86 @@ namespace VSIX
             Instance = new Command(package);
         }
 
+        private void ProcessNamespace(EnvDTE.CodeElements namespaces)
+        {
+            foreach(var i in namespaces)
+            {
+                var codeNamespace = (VCCodeNamespace)i;
+                if(null != codeNamespace)
+                {
+                    var sb = new StringBuilder(codeNamespace.Name);
+                    sb.Append("::");
+                    var prefix = sb.ToString();
+
+                    ProcessClass(prefix, codeNamespace.Classes);
+
+                    ProcessFunction(prefix, codeNamespace.Functions);
+                }
+            }
+        }
+        private void ProcessClass(string prefix, EnvDTE.CodeElements classes)
+        {
+            foreach (var i in classes)
+            {
+                var codeClass = (VCCodeClass)i;
+                if (null != codeClass)
+                {
+                    var sb = new StringBuilder(prefix);
+                    sb.Append(codeClass.Name);
+                    sb.Append("::");
+                    var newPrefix = sb.ToString();
+
+                    ProcessClass(newPrefix, codeClass.Classes);
+
+                    ProcessFunction(newPrefix, codeClass.Functions);
+                }
+            }
+        }
+        private void ProcessFunction(string prefix, EnvDTE.CodeElements functions)
+        {
+            foreach (var i in functions)
+            {
+                var codeFunction = (VCCodeFunction)i;
+                if (null != codeFunction)
+                {
+                    Debug.WriteLine("\t" + prefix + codeFunction.Name);
+
+                    #region EDIT_TEST
+                    if (false)
+                    {
+                        var textPoint = codeFunction.GetStartPoint(EnvDTE.vsCMPart.vsCMPartBody);
+                        if (null != textPoint)
+                        {
+                            var editPoint = textPoint.CreateEditPoint();
+                            editPoint.WordRight();
+                            if (editPoint.FindPattern("XXX;"))
+                            {
+                                var endOfLinePoint = textPoint.CreateEditPoint();
+                                endOfLinePoint.EndOfLine();
+                                editPoint.Delete(endOfLinePoint);
+                                editPoint.DeleteWhitespace(EnvDTE.vsWhitespaceOptions.vsWhitespaceOptionsVertical);
+                            }
+                            else
+                            {
+                                editPoint.Insert("XXX;\n");
+                                editPoint.Indent();
+                            }
+                        }
+                    }
+                    #endregion
+
+                    foreach (var j in codeFunction.Parameters)
+                    {
+                        var codeParameter = (VCCodeParameter)j;
+                        if (null != codeParameter)
+                        {
+                            Debug.WriteLine("\t" + "\t" + codeParameter.TypeString + " " + codeParameter.Name);
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// This function is the callback used to execute the command when the menu item is clicked.
         /// See the constructor to see how the menu item is associated with this function using
@@ -96,8 +177,6 @@ namespace VSIX
                 var solution = dte.Solution;
                 if(null != solution)
                 {
-                    #region Solution
-                    //!< ソリューション列挙
                     for (var i = 1; i <= solution.Count; ++i)
                     {
                         Debug.WriteLine(solution.Item(i).Name);
@@ -105,79 +184,13 @@ namespace VSIX
                         var codeModel = (VCCodeModel)solution.Item(i).CodeModel;
                         if (null != codeModel)
                         {
-                            var classes = codeModel.Classes;
-                            if(null != classes)
-                            {
-                                #region Class
-                                //!< クラス列挙
-                                foreach(var j in classes)
-                                {
-                                    var codeClass = (VCCodeClass)j;
-                                    if (null != codeClass)
-                                    {
-                                        Debug.WriteLine("\t" + codeClass.Name);
+                            ProcessNamespace(codeModel.Namespaces);
 
-                                        var functions = codeClass.Functions;
-                                        if (null != functions)
-                                        {
-                                            #region Function
-                                            //!< クラス関数列挙
-                                            foreach(var k in functions)
-                                            {
-                                                var codeFunction = (VCCodeFunction)k;
-                                                if (null != codeFunction)
-                                                {
-                                                    Debug.WriteLine("\t" + "\t" + codeFunction.Name);
-                                                    //!< 引数列挙
-                                                    foreach(var l in codeFunction.Parameters)
-                                                    {
-                                                        var codeParameter = (VCCodeParameter)l;
-                                                        if(null != codeParameter)
-                                                        {
-                                                            Debug.WriteLine("\t" + "\t" + "\t" + codeParameter.TypeString + " " + codeParameter.Name);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            #endregion
-                                        }
-                                    }
-                                }
-                                #endregion
-                            }
+                            ProcessClass("", codeModel.Classes);
 
-                            var globalFunctions = codeModel.Functions;
-                            if (null != globalFunctions)
-                            {
-                                #region GlobalFunction
-                                //!< グローバル関数列挙
-                                foreach(var j in globalFunctions)
-                                {
-                                    var codeFunction = (VCCodeFunction)j;
-                                    if (null != codeFunction)
-                                    {
-                                        Debug.WriteLine("\t" + codeFunction.Name);
-
-#if false
-                                        //!< 関数名が "XXX" の場合、関数ボディの先頭に "YYY" を挿入するテスト
-                                        if (codeFunction.Name == "XXX")
-                                        {
-                                            var textPoint = codeFunction.GetStartPoint(EnvDTE.vsCMPart.vsCMPartBody);
-                                            if (null != textPoint)
-                                            {
-                                                var editPoint = textPoint.CreateEditPoint();
-                                                editPoint.WordRight();
-                                                editPoint.Insert("YYY");
-                                            }
-                                        }
-#endif
-                                    }
-                                }
-                                #endregion
-                            }
+                            ProcessFunction("", codeModel.Functions);
                         }
                     }
-                    #endregion
                 }
             }
 
