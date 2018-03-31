@@ -56,7 +56,7 @@
         <Parent guid="guidCommandPackageCmdSet" id="MyMenuGroup" />
         <Icon guid="guidImages" id="bmpPic1" />
         <Strings>
-          <ButtonText>Invoke Command</ButtonText>
+          <ButtonText>コマンドを実行(Invoke Command)<!--Invoke Command--></ButtonText>
         </Strings>
       </Button>
     </Buttons>

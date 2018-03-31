@@ -127,28 +127,65 @@ namespace VSIX
                     Debug.WriteLine("\t" + prefix + codeFunction.Name);
 
                     #region EDIT_TEST
-                    if (false)
+                    if (false/*prefix + codeFunction.Name == ""*/)
                     {
+#if false
                         var textPoint = codeFunction.GetStartPoint(EnvDTE.vsCMPart.vsCMPartBody);
                         if (null != textPoint)
                         {
                             var editPoint = textPoint.CreateEditPoint();
-                            editPoint.WordRight();
-                            if (editPoint.FindPattern("XXX;"))
+                            if (null != editPoint)
                             {
-                                var endOfLinePoint = textPoint.CreateEditPoint();
-                                endOfLinePoint.EndOfLine();
-                                editPoint.Delete(endOfLinePoint);
-                                editPoint.DeleteWhitespace(EnvDTE.vsWhitespaceOptions.vsWhitespaceOptionsVertical);
-                            }
-                            else
-                            {
-                                editPoint.Insert("XXX;\n");
-                                editPoint.Indent();
+                                //!< "XXX" が見つかると editPoint は "XXX" の先頭、endPoint は末尾になる
+                                EnvDTE.EditPoint endPoint = null;
+                                if (editPoint.FindPattern("XXX", 0, ref endPoint))
+                                {
+                                    editPoint.Delete(endPoint);
+                                    editPoint.DeleteWhitespace(EnvDTE.vsWhitespaceOptions.vsWhitespaceOptionsVertical);
+                                }
+                                else
+                                {
+                                    editPoint.Insert("\n");
+                                    editPoint.Indent();
+                                    editPoint.Insert("XXX\n");
+                                    editPoint.Indent();
+                                }
                             }
                         }
+#else
+                        //!< GetStartPoint() に(デフォルト以外の)引数を渡すと例外を発生することあったので自前でやる…
+                        var textPoint = codeFunction.GetStartPoint();
+                        if(null != textPoint)
+                        {
+                            var editPoint = textPoint.CreateEditPoint();
+                            if(null != editPoint)
+                            {
+                                //!< "{" が見つかると editPoint は "{" の先頭になる
+                                if (editPoint.FindPattern("{"))
+                                {
+                                    //!< "{" の次へ (これで vsCMPartBody 相当になる)
+                                    editPoint.CharRight();
+
+                                    //!< "XXX" が見つかると editPoint は "XXX" の先頭、endPoint は末尾になる
+                                    EnvDTE.EditPoint endPoint = null;
+                                    if (editPoint.FindPattern("XXX", 0, ref endPoint))
+                                    {
+                                        editPoint.Delete(endPoint);
+                                        editPoint.DeleteWhitespace(EnvDTE.vsWhitespaceOptions.vsWhitespaceOptionsVertical);
+                                    }
+                                    else
+                                    {
+                                        editPoint.Insert("\n");
+                                        editPoint.Indent();
+                                        editPoint.Insert("XXX\n");
+                                        editPoint.Indent();
+                                    }
+                                }
+                            }
+                        }
+#endif
                     }
-                    #endregion
+#endregion
 
                     foreach (var j in codeFunction.Parameters)
                     {

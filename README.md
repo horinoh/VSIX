@@ -14,4 +14,4 @@
 ## 実行
 
 * 実行すると Visual Studio がもう一つ起動するので適当なソリューションを開いて読み込むのを待つ
-    * ツール - Invoke Command とすると MenuItemCallback() がコールバックされる
+    * ツール - コマンドを実行(Invoke Command) とすると MenuItemCallback() がコールバックされる
